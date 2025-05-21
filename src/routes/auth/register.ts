@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { hashPassword } from "@/utils/passwords";
 import { createAccount } from "@/utils/accounts";
 import { createVerificationCode } from "@/utils/code";
-import { sendEmail } from "@/send-email";
+import { sendEmail } from "@/utils/email";
 
 export const register = new Hono();
 
