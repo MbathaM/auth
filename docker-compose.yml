@@ -10,5 +10,6 @@ services:
     environment:
       - DB_FILE_NAME=${DB_FILE_NAME}
       - JWT_SECRET=${JWT_SECRET}
+      - RESEND_API_KEY=${RESEND_API_KEY}
     volumes:
       - ./local.db:/app/local.db
