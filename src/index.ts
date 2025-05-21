@@ -6,25 +6,31 @@ import { logger } from "hono/logger";
 import { compress } from "hono/compress";
 import { csrf } from "hono/csrf";
 import { prettyJSON } from "hono/pretty-json";
-import { authRoutes } from "./routes/auth";
-import { publicRoutes } from "./routes/public";
+import { authRoutes } from "@/routes/auth";
+import { publicRoutes } from "@/routes/public";
+import { corsConfig } from "@/config/cors";
 
 const port = process.env.PORT || 3000;
 const app = new Hono();
-app.use(
-  "*",
-  cors({
-    origin: "*",
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-  }),
-  logger(),
-  prettyJSON(),
-  compress(),
-  csrf({
-    origin: "*",
-  })
-);
+
+export const customLogger = (message: string, ...rest: string[]) => {
+  console.log(message, ...rest);
+};
+
+// CSRF middleware
+app.use('*', csrf());
+
+// CORS middleware
+app.use('*', cors(corsConfig));
+
+// Logger middleware
+app.use(logger());
+
+// Compression middleware
+app.use("*", compress());
+
+// Pretty JSON middleware
+app.use("*", prettyJSON());
 
 app.route("/api", authRoutes).route("/", publicRoutes);
 

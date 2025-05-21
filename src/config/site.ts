@@ -2,7 +2,7 @@ export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
   url:  "http://localhost:3000",
-  name: "acme",
+  name: "Auth",
   description: "A lightweight, extensible authentication server",
   author: {
     name: "Mbatha Melusi",

@@ -1,27 +1,71 @@
-FROM node:22-alpine AS base
+# syntax=docker/dockerfile:1
 
+ARG NODE_VERSION=24-alpine
+ARG PNPM_VERSION=10.4.1
+
+# ---- Base image with corepack and pnpm enabled ----
+FROM node:${NODE_VERSION} AS base
+
+# Install corepack and pnpm
+RUN apk add --no-cache curl && \
+    corepack enable && \
+    corepack prepare pnpm@${PNPM_VERSION} --activate
+
+WORKDIR /app
+
+# ---- Builder stage: install deps and build with tsup ----
 FROM base AS builder
-
-RUN apk add --no-cache gcompat
 WORKDIR /app
 
-COPY package*json tsconfig.json src ./
+COPY package.json pnpm-lock.yaml ./
 
-RUN npm ci && \
-    npm run build && \
-    npm prune --production
+# Setup pnpm cache
+ENV PNPM_HOME=/root/.local/share/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ENV PNPM_STORE_DIR=/root/.pnpm-store
 
-FROM base AS runner
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+
+# Assumes build command runs tsup
+RUN pnpm run build
+
+# ---- Production image ----
+FROM node:${NODE_VERSION} AS final
+
+# Add corepack and pnpm again (only if needed at runtime)
+RUN apk add --no-cache curl && \
+    corepack enable && \
+    corepack prepare pnpm@${PNPM_VERSION} --activate
+
 WORKDIR /app
+ENV NODE_ENV=production
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 hono
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/drizzle ./drizzle
 
-COPY --from=builder --chown=hono:nodejs /app/node_modules /app/node_modules
-COPY --from=builder --chown=hono:nodejs /app/dist /app/dist
-COPY --from=builder --chown=hono:nodejs /app/package.json /app/package.json
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
 
-USER hono
 EXPOSE 3000
+CMD ["node", "dist/index.js"]
 
-CMD ["node", "/app/dist/src/index.js"]
+# ---- Development image (optional) ----
+FROM base AS dev
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml ./
+ENV PNPM_HOME=/root/.local/share/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ENV PNPM_STORE_DIR=/root/.pnpm-store
+
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+
+VOLUME ["/app/src"]
+CMD ["pnpm", "run", "dev"]

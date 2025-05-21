@@ -1,10 +1,10 @@
 import { db } from "@/db";
-import { sessions, users } from "@/db/schema";
+import { sessions } from "@/db/schema";
 import { createJwt } from "@/utils/jwt";
 import type { Context } from "hono";
 import { v4 as uuidv4 } from "uuid";
 import { getConnInfo } from "@hono/node-server/conninfo";
-import { and, eq, gt } from "drizzle-orm";
+import { eq} from "drizzle-orm";
 import { getUserById } from "@/utils/user";
 
 // Create a new session or return an existing one

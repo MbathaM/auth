@@ -1,5 +1,4 @@
-// lib/redis.ts
-import { createClient, RedisClientType } from "redis";
+import { createClient, type RedisClientType } from "redis";
 
 const globalForRedis = global as unknown as { 
   redis: RedisClientType | undefined 
