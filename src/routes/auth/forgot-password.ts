@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { sendEmail } from "@/send-email";
+import { sendEmail } from "@/utils/email";
 import { createVerificationCode } from "@/utils/code";
 import { Hono } from "hono";
 
