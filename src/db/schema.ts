@@ -1,41 +1,45 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, text, boolean, timestamp, uuid, pgEnum } from "drizzle-orm/pg-core";
 
-export const users = sqliteTable("users", {
-    id: text("id").primaryKey(),
+export const users = pgTable("users", {
+    id: uuid("id").primaryKey().defaultRandom(),
     name: text('name'),
     email: text("email").unique().notNull(),
-    emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
+    emailVerified: boolean('email_verified').notNull().default(false),
     role: text('role').notNull().default('user'),
     image: text('image'),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date())
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });
 
-export const verifications = sqliteTable("verifications", {
-    id: text("id").primaryKey(),
-    userId: text("user_id").notNull(),
-    type: text("type", { enum: ['email', 'password'] }).notNull().default("email"), // "email" or "password"
-    code: text("code").notNull(), // 6 digit code
-    expiresAt: integer('expiresAt', { mode: 'timestamp' }).notNull().default(new Date(Date.now() + 1000 * 60 * 60)), // 1 hour
+const verificationTypeEnum = pgEnum('verification_type', ['email', 'password']);
+
+export const verifications = pgTable("verifications", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id),
+    type: verificationTypeEnum("type").notNull().default("email"),
+    code: text("code").notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });
 
-export const sessions = sqliteTable("sessions", {
-    id: text('id').primaryKey(),
+export const sessions = pgTable("sessions", {
+    id: uuid('id').primaryKey().defaultRandom(),
     token: text('token').notNull().unique(),
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
-})
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
-export const accounts = sqliteTable("accounts", {
-    id: text("id").primaryKey(),
+const accountTypeEnum = pgEnum('account_type', ['oauth', 'credentials']);
+
+export const accounts = pgTable("accounts", {
+    id: uuid("id").primaryKey().defaultRandom(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
-    userId: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-    type: text("type", { enum: ["oauth", "credentials"] }).notNull().default("credentials"), // "credentials" or "oauth"
-    password: text("password"), // Nullable for OAuth
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(new Date()),
-    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(new Date()),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    type: accountTypeEnum("type").notNull().default("credentials"),
+    password: text("password"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
