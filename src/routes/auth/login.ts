@@ -42,19 +42,8 @@ login.post("/login", async (c) => {
     }
 
     // Create session and return JWT
-    const token = await createSession(c, user.id);
-
-    return c.json({
-      data: {
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          emailVerified: user.emailVerified,
-        },
-      },
-    });
+    const jwt = await createSession(c, user.id);
+      return c.json({ token: jwt });
   } catch (error) {
     console.error("Login error:", error);
     return c.json({ error: "Failed to login" }, { status: 500 });
