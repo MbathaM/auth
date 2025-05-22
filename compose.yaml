@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   auth:
     build:
@@ -7,11 +5,73 @@ services:
       dockerfile: Dockerfile
     restart: always
     container_name: auth
+    hostname: auth
     ports:
-      - "${PORT}:3000"
+      - ${PORT}:3000
     environment:
-      - DB_FILE_NAME=${DB_FILE_NAME}
       - JWT_SECRET=${JWT_SECRET}
       - RESEND_API_KEY=${RESEND_API_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - VALKEY_URL=${VALKEY_URL}
     volumes:
       - ./local.db:/app/local.db
+    networks:
+      - main
+    depends_on:
+      - valkey
+      - postgres
+    mem_limit: 512m   # Limit container to 512MB of memory
+    mem_reservation: 256m  # Soft memory limit (optional)
+
+  valkey:
+    image: valkey/valkey:8.1.1-alpine
+    container_name: valkey
+    hostname: valkey
+    ports:
+      - "${VALKEY_PORT}:6379"
+    command: ["valkey-server", "--requirepass", "${VALKEY_PASSWORD}"]
+    volumes:
+      - valkey_data:/data
+    restart: unless-stopped
+    networks:
+      - main
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-a", "${VALKEY_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    mem_limit: 512m   # Limit container to 512MB of memory
+    mem_reservation: 256m  # Soft memory limit (optional)
+    
+  postgres:
+    image: postgres:14-alpine
+    container_name: postgres
+    hostname: postgres
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    restart: unless-stopped
+    networks:
+      - main
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    mem_limit: 512m   # Limit container to 512MB of memory
+    mem_reservation: 256m  # Soft memory limit (optional)
+
+volumes:
+  valkey_data:
+  postgres_data:
+
+networks:
+  main:
+    external: true
