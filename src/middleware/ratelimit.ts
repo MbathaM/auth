@@ -1,6 +1,6 @@
 import type { Context, Next } from 'hono';
 import { getConnInfo } from "@hono/node-server/conninfo";
-import { redis } from '@/lib/redis';
+import { valkey } from '@/lib/valkey';
 
 export function rateLimitMiddleware(limit: number, windowMs: number) {
   return async (c: Context, next: Next) => {
@@ -11,14 +11,14 @@ export function rateLimitMiddleware(limit: number, windowMs: number) {
 
     try {
       // Increment and get current count
-      const count = await redis.incr(key);
+      const count = await valkey.incr(key);
 
       // If this is the first request, set expiration
       if (count === 1) {
-        await redis.pExpire(key, windowMs); // expire in ms
+        await valkey.pExpire(key, windowMs); // expire in ms
       }
 
-      const ttl = await redis.pTTL(key); // time to live in ms
+      const ttl = await valkey.pTTL(key); // time to live in ms
 
       // Check limitb 
       if (count > limit) {
@@ -38,7 +38,7 @@ export function rateLimitMiddleware(limit: number, windowMs: number) {
 
       await next();
     } catch (error) {
-      console.error('Rate limiter Redis error:', error);
+      console.error('Rate limiter valkey error:', error);
       return c.json(
         {
           error: 'Internal server error',
