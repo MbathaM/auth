@@ -1,6 +1,6 @@
 import { verifyJWT } from "@/utils/jwt";
 import { Hono } from "hono";
-import { getSession,  } from "@/utils/session";
+import { getSession } from "@/utils/session";
 import { getUserById } from "@/utils/user";
 import type { User, Session } from "@/types";
 
@@ -11,7 +11,9 @@ session.post("/get-session", async (c) => {
   let user: User | null = null;
 
   const authHeader = c.req.header("Authorization");
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.split(" ")[1]
+    : null;
 
   if (token) {
     const payload = await verifyJWT(token);
@@ -23,10 +25,13 @@ session.post("/get-session", async (c) => {
     }
   }
 
-  return c.json({
-    data: {
-      session,
-      user,
+  return c.json(
+    {
+      data: { 
+        session,
+        user,
+      },
     },
-  });
+    { status: 200 }
+  );
 });

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { verifyCode } from "@/utils/code";
+import { createResetSession } from "@/utils/passwords";
 import { eq } from "drizzle-orm";
 
 export const verify = new Hono();
@@ -34,26 +35,31 @@ verify.post("/verify", async (c) => {
       return c.json({ error: verification.error }, { status: 400 });
     }
 
-    // If email verification, update user's emailVerified status
+    // If verifying email, update user
     if (type === "email") {
       await db.update(users)
         .set({ emailVerified: true, updatedAt: new Date() })
         .where(eq(users.id, user.id));
 
       return c.json({
-        data: {
-          message: "Email verified successfully",
-        },
-      });
+        // data: {
+        //   message: "Email verified successfully. Procced to login.",
+        // },
+        message: "Email verified successfully. Procced to login.",
+      }, { status: 200 });
     }
 
-    // If password verification, return success (password reset will be handled separately)
+    // If verifying password, create reset session in Redis
+    // const resetSessionId = await createResetSession(email);
+    await createResetSession(email);
+
     return c.json({
-      data: {
-        message: "Code verified successfully",
-        userId: user.id,
-      },
-    });
+      // data: {
+      //   message: "Code verified. Proceed to reset password.",
+      //   // resetSessionId,
+      // },
+      message: "Code verified. Proceed to reset password.",
+    },{ status: 200 });
   } catch (error) {
     console.error("Verification error:", error);
     return c.json({ error: "Failed to verify code" }, { status: 500 });

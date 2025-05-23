@@ -58,13 +58,17 @@ signup.post("/signup", async (c) => {
     });
 
     return c.json({
-      data: {
-        user: {
-         ...user,
-        },
-        message: "Verification code sent to your email",
+      // data: {
+      //   user: {
+      //    ...user,
+      //   },
+      //   message: "Verification code sent to your email",
+      // },
+      message: "Verification code sent to your email",
+      user: {
+        ...user,
       },
-    });
+    }, { status: 200 });
   } catch (error) {
     console.error("Registration error:", error);
     return c.json({ error: "Failed to register user" }, { status: 500 });

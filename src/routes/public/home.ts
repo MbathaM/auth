@@ -1,9 +1,9 @@
 import { siteConfig } from '@/config/site';
 import { Hono } from 'hono'
 
-export const hello = new Hono()
+export const home = new Hono()
 
-hello.get('/', (c) => c.json({ 
+home.get('/', (c) => c.json({ 
     name: siteConfig.name,
     version: '1.0.0',
     status: 'ok',

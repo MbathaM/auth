@@ -1,7 +1,6 @@
 import { db } from "@/db";
 import { accounts } from "@/db/schema";
-import { verifyCode } from "@/utils/code";
-import { hashPassword } from "@/utils/passwords";
+import { hashPassword, verifyResetSession, getResetSession } from "@/utils/passwords";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 
@@ -9,10 +8,22 @@ export const resetPassword = new Hono();
 
 resetPassword.post("/reset-password", async (c) => {
   try {
-    const { email, code, newPassword } = await c.req.json();
+    const { email, newPassword } = await c.req.json();
 
-    if (!email || !code || !newPassword) {
-      return c.json({ error: "Email, code, and new password are required" }, { status: 400 });
+    if (!email || !newPassword) {
+      return c.json({ error: "Email and new password are required" }, { status: 400 });
+    }
+
+    // Get session ID from Redis using email
+    const resetSessionId = await getResetSession(email);
+    if (!resetSessionId) {
+      return c.json({ error: "No active reset session found. Please request a new one." }, { status: 400 });
+    }
+
+    // Verify and consume session
+    const verifiedEmail = await verifyResetSession(resetSessionId);
+    if (!verifiedEmail || verifiedEmail !== email) {
+      return c.json({ error: "Reset session is invalid or expired" }, { status: 400 });
     }
 
     // Find user by email
@@ -24,14 +35,7 @@ resetPassword.post("/reset-password", async (c) => {
       return c.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Verify the code
-    const verification = await verifyCode(user, code, "password");
-
-    if (!verification.success) {
-      return c.json({ error: verification.error }, { status: 400 });
-    }
-
-    // Find the user's credentials account
+    // Find user's credentials account
     const account = await db.query.accounts.findFirst({
       where: (a, { eq, and }) => and(
         eq(a.userId, user.id),
@@ -43,18 +47,20 @@ resetPassword.post("/reset-password", async (c) => {
       return c.json({ error: "Account not found" }, { status: 404 });
     }
 
-    // Hash the new password and update the account
+    // Hash new password
     const hashedPassword = await hashPassword(newPassword);
-    
+
+    // Update password
     await db.update(accounts)
       .set({ password: hashedPassword, updatedAt: new Date() })
       .where(eq(accounts.id, account.id));
 
     return c.json({
-      data: {
-        message: "Password reset successfully",
-      },
-    });
+      // data: {
+      //   message: "Password reset successfully",
+      // },
+      message: "Password reset successfully",
+    }, { status: 200 });
   } catch (error) {
     console.error("Reset password error:", error);
     return c.json({ error: "Failed to reset password" }, { status: 500 });

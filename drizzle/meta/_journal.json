@@ -1,19 +1,12 @@
 {
   "version": "7",
-  "dialect": "sqlite",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1747818297245,
-      "tag": "0000_living_matthew_murdock",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1747871119957,
-      "tag": "0001_wealthy_leader",
+      "version": "7",
+      "when": 1747995532290,
+      "tag": "0000_supreme_mandroid",
       "breakpoints": true
     }
   ]

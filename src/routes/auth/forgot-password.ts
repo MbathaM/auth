@@ -21,10 +21,11 @@ forgotPassword.post("/forgot-password", async (c) => {
     if (!user) {
       // Don't reveal that the user doesn't exist for security reasons
       return c.json({
-        data: {
-          message: "If a user with that email exists, a password reset code has been sent",
-        },
-      });
+        // data: {
+        //   message: "If a user with that email exists, a password reset code has been sent",
+        // },
+        message: "If a user with that email exists, a password reset code has been sent",
+      }, { status: 200 });
     }
 
     // Generate verification code and send email
@@ -37,10 +38,11 @@ forgotPassword.post("/forgot-password", async (c) => {
     });
 
     return c.json({
-      data: {
-        message: "If a user with that email exists, a password reset code has been sent",
-      },
-    });
+      // data: {
+      //   message: "If a user with that email exists, a password reset code has been sent",
+      // },
+      message: "If a user with that email exists, a password reset code has been sent",
+    }, { status: 200 });
   } catch (error) {
     console.error("Forgot password error:", error);
     return c.json({ error: "Failed to process request" }, { status: 500 });

@@ -9,6 +9,7 @@ import { prettyJSON } from "hono/pretty-json";
 import { authRoutes } from "@/routes/auth";
 import { publicRoutes } from "@/routes/public";
 import { corsConfig } from "@/config/cors";
+import {yoco} from "./routes/webhook";
 
 const port = process.env.PORT || 3000;
 const app = new Hono();
@@ -32,7 +33,7 @@ app.use("*", compress());
 // Pretty JSON middleware
 app.use("*", prettyJSON());
 
-app.route("/api", authRoutes).route("/", publicRoutes);
+app.route("/api", authRoutes).route("/", publicRoutes).route("/", yoco);
 
 app.notFound((c) => {
   return c.json({ error: "Not Found" }, 404);

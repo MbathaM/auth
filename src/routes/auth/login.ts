@@ -11,7 +11,10 @@ login.post("/login", async (c) => {
 
     // Validate input
     if (!email || !password) {
-      return c.json({ error: "Email and password are required" }, { status: 400 });
+      return c.json(
+        { error: "Email and password are required" },
+        { status: 400 }
+      );
     }
 
     // Find user by email
@@ -25,10 +28,8 @@ login.post("/login", async (c) => {
 
     // Find account with credentials
     const account = await db.query.accounts.findFirst({
-      where: (a, { eq, and }) => and(
-        eq(a.userId, user.id),
-        eq(a.type, "credentials")
-      ),
+      where: (a, { eq, and }) =>
+        and(eq(a.userId, user.id), eq(a.type, "credentials")),
     });
 
     if (!account || !account.password) {
@@ -43,7 +44,14 @@ login.post("/login", async (c) => {
 
     // Create session and return JWT
     const jwt = await createSession(c, user.id);
-      return c.json({ token: jwt });
+    return c.json({
+      // data: {
+      //   message: "login successfully",
+      //   token: jwt,
+      // },
+      message: "login successfully",
+      token: jwt,
+    }, { status: 200 });
   } catch (error) {
     console.error("Login error:", error);
     return c.json({ error: "Failed to login" }, { status: 500 });
